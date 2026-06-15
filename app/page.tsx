@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { CalorieDetailSection } from "@/components/dashboard/calorie-detail-section";
 import { KpiSection } from "@/components/dashboard/kpi-section";
+import { PfcDetailSection } from "@/components/dashboard/pfc-detail-section";
 import { SectionPlaceholder } from "@/components/dashboard/section-placeholder";
 import { TrendSection } from "@/components/dashboard/trend-section";
 import { WeeklySummarySection } from "@/components/dashboard/weekly-summary-section";
@@ -34,7 +36,9 @@ export default async function Home() {
       <WeeklySummarySection userId={user.id} today={today} />
       <SectionPlaceholder title="アラート要約" />
       <SectionPlaceholder title="改善アクション要約" />
-      <SectionPlaceholder title="詳細グラフ" />
+      <CalorieDetailSection userId={user.id} today={today} />
+      <PfcDetailSection userId={user.id} today={today} />
+      <SectionPlaceholder title="種目別成長" />
       <form action="/auth/signout" method="post" className="flex justify-center">
         <Button type="submit" variant="outline" size="sm">
           ログアウト

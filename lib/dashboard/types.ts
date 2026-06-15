@@ -48,3 +48,8 @@ export interface CalorieIntakePFC {
   fat_g: number | null;
   carbs_g: number | null;
 }
+
+export interface MultiSeriesPoint {
+  date: string;
+  [seriesKey: string]: string | number | null;
+}
