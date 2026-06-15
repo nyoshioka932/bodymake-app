@@ -1,6 +1,7 @@
 import { parseAppleHealthZip } from "@/lib/importers/parsers/apple-health";
-import { parseFitbitCsv } from "@/lib/importers/parsers/fitbit";
+import { parseFitbitExport } from "@/lib/importers/parsers/fitbit";
 import { parseOmronCsv } from "@/lib/importers/parsers/omron";
+import { saveFitbitImport } from "@/lib/importers/savers/fitbit";
 import { saveOmronImport } from "@/lib/importers/savers/omron";
 import { saveStub } from "@/lib/importers/savers/stub";
 import type { DataType, Parser, Saver } from "@/lib/importers/types";
@@ -30,10 +31,10 @@ export const DATA_TYPE_INFO: Record<
     saver: saveStub,
   },
   calorie_burn: {
-    label: "Fitbit消費カロリーCSV",
+    label: "Fitbitデータ（Google Takeout ZIP）",
     description: "消費カロリー・歩数・アクティブ時間のデータを取り込みます",
-    accept: ".csv",
-    parser: parseFitbitCsv,
-    saver: saveStub,
+    accept: ".zip",
+    parser: parseFitbitExport,
+    saver: saveFitbitImport,
   },
 };
