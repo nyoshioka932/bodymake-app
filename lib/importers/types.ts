@@ -7,6 +7,7 @@ export interface ImportRow {
   date: string;
   values: Record<string, string | number | null>;
   isDuplicate: boolean;
+  payload?: Record<string, unknown>;
 }
 
 export interface ImportErrorRow {
@@ -37,3 +38,10 @@ export interface ImportResult {
   recordsOverwritten: number;
   recordsError: number;
 }
+
+export type Saver = (args: {
+  rows: ImportRow[];
+  mode: ImportMode;
+  startDate: string | null;
+  endDate: string | null;
+}) => Promise<Omit<ImportResult, "recordsError">>;

@@ -18,13 +18,6 @@ import type {
 
 type WizardStep = "select" | "file" | "preview" | "mode" | "result";
 
-const INITIAL_RESULT: ImportResult = {
-  recordsImported: 0,
-  recordsSkipped: 0,
-  recordsOverwritten: 0,
-  recordsError: 0,
-};
-
 export function ImportWizard() {
   const [step, setStep] = useState<WizardStep>("select");
   const [dataType, setDataType] = useState<DataType | null>(null);
@@ -81,6 +74,17 @@ export function ImportWizard() {
     setError(null);
 
     try {
+      const saveResult = await DATA_TYPE_INFO[dataType].saver({
+        rows: preview.rows,
+        mode,
+        startDate: startDate || null,
+        endDate: endDate || null,
+      });
+      const result: ImportResult = {
+        ...saveResult,
+        recordsError: preview.errors.length,
+      };
+
       await saveImportLog({
         dataType,
         fileName: file.name,
@@ -89,9 +93,9 @@ export function ImportWizard() {
         targetStartDate: startDate || null,
         targetEndDate: endDate || null,
         preview,
-        result: INITIAL_RESULT,
+        result,
       });
-      setResult(INITIAL_RESULT);
+      setResult(result);
       setStep("result");
     } catch (e) {
       setError(e instanceof Error ? e.message : "保存に失敗しました");
