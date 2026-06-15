@@ -34,3 +34,17 @@ export interface MuscleGroupSets {
   actualSets: number;
   targetSets: number | null;
 }
+
+export interface MuscleGroupSetCount {
+  muscleGroup: "chest" | "back" | "shoulder" | "legs";
+  label: string;
+  actualSets: number;
+}
+
+export interface CalorieIntakePFC {
+  date: string;
+  calories_kcal: number | null;
+  protein_g: number | null;
+  fat_g: number | null;
+  carbs_g: number | null;
+}

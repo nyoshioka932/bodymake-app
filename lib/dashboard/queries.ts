@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { BodyCompositionDaily, CalorieDaily, MuscleGroupSets } from "./types";
+import type { BodyCompositionDaily, CalorieDaily, CalorieIntakePFC, MuscleGroupSetCount, MuscleGroupSets } from "./types";
 
 type SupabaseClient = Awaited<ReturnType<typeof createClient>>;
 
@@ -76,6 +76,29 @@ export async function fetchCalorieDaily(
   }));
 }
 
+export async function fetchCalorieIntakePFC(
+  supabase: SupabaseClient,
+  userId: string,
+  startDate: string,
+  endDate: string
+): Promise<CalorieIntakePFC[]> {
+  const { data, error } = await supabase
+    .from("calorie_intakes")
+    .select("date, calories_kcal, protein_g, fat_g, carbs_g")
+    .eq("user_id", userId)
+    .gte("date", startDate)
+    .lte("date", endDate);
+  if (error) throw error;
+
+  return (data ?? []).map((row) => ({
+    date: row.date as string,
+    calories_kcal: row.calories_kcal as number | null,
+    protein_g: row.protein_g as number | null,
+    fat_g: row.fat_g as number | null,
+    carbs_g: row.carbs_g as number | null,
+  }));
+}
+
 export async function fetchCompletedWorkoutCount(
   supabase: SupabaseClient,
   userId: string,
@@ -94,18 +117,23 @@ export async function fetchCompletedWorkoutCount(
   return count ?? 0;
 }
 
-const MUSCLE_GROUPS: { key: "chest" | "back" | "shoulder"; label: string }[] = [
+const TARGET_MUSCLE_GROUPS: { key: "chest" | "back" | "shoulder"; label: string }[] = [
   { key: "chest", label: "胸" },
   { key: "back", label: "背中" },
   { key: "shoulder", label: "肩" },
 ];
 
-export async function fetchMuscleGroupSets(
+const ALL_MUSCLE_GROUPS: { key: "chest" | "back" | "shoulder" | "legs"; label: string }[] = [
+  ...TARGET_MUSCLE_GROUPS,
+  { key: "legs", label: "脚" },
+];
+
+export async function fetchMuscleGroupSetCounts(
   supabase: SupabaseClient,
   userId: string,
   startDate: string,
   endDate: string
-): Promise<MuscleGroupSets[]> {
+): Promise<MuscleGroupSetCount[]> {
   const { data: workouts, error: workoutsError } = await supabase
     .from("workouts")
     .select("id")
@@ -134,6 +162,17 @@ export async function fetchMuscleGroupSets(
     }
   }
 
+  return ALL_MUSCLE_GROUPS.map(({ key, label }) => ({
+    muscleGroup: key,
+    label,
+    actualSets: actualByMuscleGroup.get(key) ?? 0,
+  }));
+}
+
+async function fetchWeeklySetTargets(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Record<"chest" | "back" | "shoulder", number | null>> {
   const { data: alertSettings, error: alertSettingsError } = await supabase
     .from("alert_settings")
     .select("chest_weekly_sets_target, back_weekly_sets_target, shoulder_weekly_sets_target")
@@ -141,16 +180,30 @@ export async function fetchMuscleGroupSets(
     .maybeSingle();
   if (alertSettingsError) throw alertSettingsError;
 
-  const targetByMuscleGroup: Record<string, number | null> = {
+  return {
     chest: (alertSettings?.chest_weekly_sets_target as number | null) ?? null,
     back: (alertSettings?.back_weekly_sets_target as number | null) ?? null,
     shoulder: (alertSettings?.shoulder_weekly_sets_target as number | null) ?? null,
   };
+}
 
-  return MUSCLE_GROUPS.map(({ key, label }) => ({
+export async function fetchMuscleGroupSets(
+  supabase: SupabaseClient,
+  userId: string,
+  startDate: string,
+  endDate: string
+): Promise<MuscleGroupSets[]> {
+  const [counts, targets] = await Promise.all([
+    fetchMuscleGroupSetCounts(supabase, userId, startDate, endDate),
+    fetchWeeklySetTargets(supabase, userId),
+  ]);
+
+  const countByMuscleGroup = new Map(counts.map((c) => [c.muscleGroup, c.actualSets]));
+
+  return TARGET_MUSCLE_GROUPS.map(({ key, label }) => ({
     muscleGroup: key,
     label,
-    actualSets: actualByMuscleGroup.get(key) ?? 0,
-    targetSets: targetByMuscleGroup[key],
+    actualSets: countByMuscleGroup.get(key) ?? 0,
+    targetSets: targets[key],
   }));
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { KpiSection } from "@/components/dashboard/kpi-section";
 import { SectionPlaceholder } from "@/components/dashboard/section-placeholder";
 import { TrendSection } from "@/components/dashboard/trend-section";
+import { WeeklySummarySection } from "@/components/dashboard/weekly-summary-section";
 import { Button } from "@/components/ui/button";
 import { getTodayJST } from "@/lib/dashboard/calculations";
 import { createClient } from "@/lib/supabase/server";
@@ -30,7 +31,7 @@ export default async function Home() {
     <div className="flex flex-col gap-4 p-4">
       <KpiSection userId={user.id} today={today} />
       <TrendSection userId={user.id} today={today} />
-      <SectionPlaceholder title="直近7日サマリー" />
+      <WeeklySummarySection userId={user.id} today={today} />
       <SectionPlaceholder title="アラート要約" />
       <SectionPlaceholder title="改善アクション要約" />
       <SectionPlaceholder title="詳細グラフ" />
