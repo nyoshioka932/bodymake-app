@@ -1,5 +1,16 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { redirect } from "next/navigation";
+import { TemplatesPageClient } from "@/components/workout/templates-page-client";
+import { createClient } from "@/lib/supabase/server";
 
-export default function TemplatesPage() {
-  return <PlaceholderPage title="テンプレート管理" />;
+export default async function TemplatesPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return <TemplatesPageClient />;
 }
