@@ -22,6 +22,16 @@ export interface WorkoutTemplate {
   sort_order: number;
 }
 
+export interface WorkoutSession {
+  id: string;
+  date: string;
+  split_type: SplitType | null;
+  status: "in_progress" | "completed" | "discarded";
+  memo: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
 export interface TemplateExercise {
   id: string;
   template_id: string;

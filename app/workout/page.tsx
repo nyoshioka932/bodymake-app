@@ -1,5 +1,16 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { redirect } from "next/navigation";
+import { WorkoutPageClient } from "@/components/workout/workout-page-client";
+import { createClient } from "@/lib/supabase/server";
 
-export default function WorkoutPage() {
-  return <PlaceholderPage title="筋トレ記録" />;
+export default async function WorkoutPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return <WorkoutPageClient />;
 }
