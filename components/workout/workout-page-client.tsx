@@ -1,18 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { SectionPlaceholder } from "@/components/dashboard/section-placeholder";
+import { WorkoutExercises } from "@/components/workout/workout-exercises";
 import { WorkoutSessionHeader } from "@/components/workout/workout-session-header";
 import { WorkoutStartScreen } from "@/components/workout/workout-start-screen";
 import { fetchTemplates } from "@/lib/workout/template-queries";
 import { fetchInProgressWorkout } from "@/lib/workout/workout-queries";
-import type { WorkoutSession, WorkoutTemplate } from "@/lib/workout/types";
+import type { TemplateExercise, WorkoutSession, WorkoutTemplate } from "@/lib/workout/types";
 
 type PageState = "loading" | "start" | "session";
 
 export function WorkoutPageClient() {
   const [pageState, setPageState] = useState<PageState>("loading");
   const [session, setSession] = useState<WorkoutSession | null>(null);
+  const [templateExercises, setTemplateExercises] = useState<TemplateExercise[]>([]);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -24,6 +25,7 @@ export function WorkoutPageClient() {
         setTemplates(tmpl);
         if (inProgress) {
           setSession(inProgress);
+          setTemplateExercises([]);
           setPageState("session");
         } else {
           setPageState("start");
@@ -48,8 +50,9 @@ export function WorkoutPageClient() {
       <div className="p-4">
         <WorkoutStartScreen
           templates={templates}
-          onStart={(s) => {
+          onStart={(s, tmplExercises) => {
             setSession(s);
+            setTemplateExercises(tmplExercises);
             setPageState("session");
           }}
         />
@@ -59,20 +62,23 @@ export function WorkoutPageClient() {
 
   if (!session) return null;
 
+  const resetToStart = () => {
+    setSession(null);
+    setTemplateExercises([]);
+    setPageState("start");
+  };
+
   return (
     <div className="flex flex-col gap-3 p-4">
       <WorkoutSessionHeader
         session={session}
-        onComplete={() => {
-          setSession(null);
-          setPageState("start");
-        }}
-        onDiscard={() => {
-          setSession(null);
-          setPageState("start");
-        }}
+        onComplete={resetToStart}
+        onDiscard={resetToStart}
       />
-      <SectionPlaceholder title="セット入力" />
+      <WorkoutExercises
+        workoutId={session.id}
+        initialTemplateExercises={templateExercises}
+      />
     </div>
   );
 }

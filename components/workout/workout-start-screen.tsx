@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { fetchTemplateExercises } from "@/lib/workout/template-queries";
 import { fetchLastCompletedWorkout } from "@/lib/workout/workout-queries";
 import { createWorkout } from "@/lib/workout/workout-actions";
-import type { SplitType, WorkoutSession, WorkoutTemplate } from "@/lib/workout/types";
+import type { TemplateExercise, WorkoutSession, WorkoutTemplate } from "@/lib/workout/types";
 import { SPLIT_TYPE_LABELS } from "@/lib/workout/types";
 
 export function WorkoutStartScreen({
@@ -12,18 +13,21 @@ export function WorkoutStartScreen({
   onStart,
 }: {
   templates: WorkoutTemplate[];
-  onStart: (session: WorkoutSession) => void;
+  onStart: (session: WorkoutSession, templateExercises: TemplateExercise[]) => void;
 }) {
   const [mode, setMode] = useState<"select" | "template-list">("select");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const start = async (splitType: SplitType | null) => {
+  const startFromTemplate = async (template: WorkoutTemplate) => {
     setLoading(true);
     setError(null);
     try {
-      const session = await createWorkout(splitType);
-      onStart(session);
+      const [session, templateExercises] = await Promise.all([
+        createWorkout(template.split_type),
+        fetchTemplateExercises(template.id),
+      ]);
+      onStart(session, templateExercises);
     } catch {
       setError("セッションの作成に失敗しました");
       setLoading(false);
@@ -36,7 +40,19 @@ export function WorkoutStartScreen({
     try {
       const last = await fetchLastCompletedWorkout();
       const session = await createWorkout(last?.split_type ?? null);
-      onStart(session);
+      onStart(session, []);
+    } catch {
+      setError("セッションの作成に失敗しました");
+      setLoading(false);
+    }
+  };
+
+  const handleEmpty = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const session = await createWorkout(null);
+      onStart(session, []);
     } catch {
       setError("セッションの作成に失敗しました");
       setLoading(false);
@@ -52,10 +68,10 @@ export function WorkoutStartScreen({
             key={t.id}
             type="button"
             disabled={loading}
-            onClick={() => start(t.split_type)}
+            onClick={() => startFromTemplate(t)}
             className="border-border bg-card text-foreground flex w-full items-center justify-between rounded-lg border p-3 text-left disabled:opacity-50"
           >
-            <span className="text-sm font-medium">{t.name}</span>
+            <span className="text-foreground text-sm font-medium">{t.name}</span>
             <span className="text-muted-foreground text-xs">{SPLIT_TYPE_LABELS[t.split_type]}</span>
           </button>
         ))}
@@ -69,14 +85,14 @@ export function WorkoutStartScreen({
 
   return (
     <div className="flex flex-col gap-3">
-      <h2 className="text-sm font-semibold">筋トレを開始</h2>
+      <h2 className="text-foreground text-sm font-semibold">筋トレを開始</h2>
       <Button onClick={() => setMode("template-list")} disabled={loading}>
         テンプレートから開始
       </Button>
       <Button variant="outline" onClick={handleFromLastMenu} disabled={loading}>
         {loading ? "作成中..." : "前回メニューから開始"}
       </Button>
-      <Button variant="outline" onClick={() => start(null)} disabled={loading}>
+      <Button variant="outline" onClick={handleEmpty} disabled={loading}>
         空セッションから開始
       </Button>
       {error && <p className="text-destructive text-xs">{error}</p>}
