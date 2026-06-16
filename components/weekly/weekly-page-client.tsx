@@ -11,9 +11,13 @@ import {
 import type { GoalsData } from "@/lib/weekly/queries";
 import { fetchWeeklyWorkoutSummary } from "@/lib/weekly/workout-queries";
 import type { WeeklyWorkoutSummary } from "@/lib/weekly/workout-queries";
+import { fetchAlertSettings, fetchFullGoals } from "@/lib/weekly/action-queries";
+import type { AlertSettings, FullGoals } from "@/lib/weekly/action-queries";
+import { buildActionItems } from "@/lib/weekly/action-logic";
 import { WeeklyBodySection } from "@/components/weekly/weekly-body-section";
 import { WeeklyFoodSection } from "@/components/weekly/weekly-food-section";
 import { WeeklyWorkoutSection } from "@/components/weekly/weekly-workout-section";
+import { WeeklyActionSection } from "@/components/weekly/weekly-action-section";
 
 function addDays(date: string, days: number): string {
   const d = new Date(date);
@@ -34,12 +38,19 @@ export function WeeklyPageClient() {
 
   const [baseDate, setBaseDate] = useState<string>(today);
   const [goals, setGoals] = useState<GoalsData | null>(null);
+  const [fullGoals, setFullGoals] = useState<FullGoals | null>(null);
+  const [alertSettings, setAlertSettings] = useState<AlertSettings | null>(null);
   const [weekData, setWeekData] = useState<WeekData | null>(null);
 
+  // goals/alertSettings は初回のみ取得
   useEffect(() => {
-    fetchGoals()
-      .then(setGoals)
-      .catch(() => {/* ゴールなしで続行 */});
+    Promise.all([fetchGoals(), fetchFullGoals(), fetchAlertSettings()])
+      .then(([g, fg, as_]) => {
+        setGoals(g);
+        setFullGoals(fg);
+        setAlertSettings(as_);
+      })
+      .catch(() => {/* 設定なしで続行 */});
   }, []);
 
   useEffect(() => {
@@ -86,6 +97,16 @@ export function WeeklyPageClient() {
     return `${start.slice(5).replace("-", "/")} 〜 ${baseDate.slice(5).replace("-", "/")}`;
   })();
 
+  const actionItems =
+    weekData && !isLoading
+      ? buildActionItems({
+          pfcRows: weekData.pfcRows,
+          splitSetCounts: weekData.workoutSummary.splitSetCounts,
+          goals: fullGoals,
+          alertSettings,
+        })
+      : [];
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <div className="flex items-center justify-between">
@@ -114,6 +135,7 @@ export function WeeklyPageClient() {
           <WeeklyBodySection last7={weekData!.bodyLast7} prev7Rows={weekData!.bodyPrev7} />
           <WeeklyFoodSection rows={weekData!.pfcRows} goals={goals} />
           <WeeklyWorkoutSection summary={weekData!.workoutSummary} />
+          <WeeklyActionSection items={actionItems} />
         </>
       )}
     </div>
