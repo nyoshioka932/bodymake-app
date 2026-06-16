@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertSummarySection } from "@/components/dashboard/alert-summary-section";
 import { CalorieDetailSection } from "@/components/dashboard/calorie-detail-section";
 import { ExerciseGrowthSection } from "@/components/dashboard/exercise-growth-section";
 import { KpiSection } from "@/components/dashboard/kpi-section";
@@ -35,7 +36,7 @@ export default async function Home() {
       <KpiSection userId={user.id} today={today} />
       <TrendSection userId={user.id} today={today} />
       <WeeklySummarySection userId={user.id} today={today} />
-      <SectionPlaceholder title="アラート要約" />
+      <AlertSummarySection />
       <SectionPlaceholder title="改善アクション要約" />
       <CalorieDetailSection userId={user.id} today={today} />
       <PfcDetailSection userId={user.id} today={today} />
