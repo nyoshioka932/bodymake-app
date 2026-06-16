@@ -9,8 +9,11 @@ import {
   fetchGoals,
 } from "@/lib/weekly/queries";
 import type { GoalsData } from "@/lib/weekly/queries";
+import { fetchWeeklyWorkoutSummary } from "@/lib/weekly/workout-queries";
+import type { WeeklyWorkoutSummary } from "@/lib/weekly/workout-queries";
 import { WeeklyBodySection } from "@/components/weekly/weekly-body-section";
 import { WeeklyFoodSection } from "@/components/weekly/weekly-food-section";
+import { WeeklyWorkoutSection } from "@/components/weekly/weekly-workout-section";
 
 function addDays(date: string, days: number): string {
   const d = new Date(date);
@@ -23,6 +26,7 @@ interface WeekData {
   bodyLast7: BodyCompositionDaily[];
   bodyPrev7: BodyCompositionDaily[];
   pfcRows: CalorieIntakePFC[];
+  workoutSummary: WeeklyWorkoutSummary;
 }
 
 export function WeeklyPageClient() {
@@ -49,14 +53,27 @@ export function WeeklyPageClient() {
       fetchWeeklyBodyCompositions(startDate, endDate),
       fetchWeeklyBodyCompositions(prevStartDate, prevEndDate),
       fetchWeeklyCalorieIntakePFC(startDate, endDate),
+      fetchWeeklyWorkoutSummary(startDate, endDate, prevStartDate, prevEndDate),
     ])
-      .then(([last7, prev7, pfc]) => {
+      .then(([last7, prev7, pfc, workout]) => {
         if (cancelled) return;
-        setWeekData({ forDate: baseDate, bodyLast7: last7, bodyPrev7: prev7, pfcRows: pfc });
+        setWeekData({
+          forDate: baseDate,
+          bodyLast7: last7,
+          bodyPrev7: prev7,
+          pfcRows: pfc,
+          workoutSummary: workout,
+        });
       })
       .catch(() => {
         if (cancelled) return;
-        setWeekData({ forDate: baseDate, bodyLast7: [], bodyPrev7: [], pfcRows: [] });
+        setWeekData({
+          forDate: baseDate,
+          bodyLast7: [],
+          bodyPrev7: [],
+          pfcRows: [],
+          workoutSummary: { sessionCount: 0, splitSetCounts: [], exerciseGrowths: [] },
+        });
       });
     return () => { cancelled = true; };
   }, [baseDate]);
@@ -96,6 +113,7 @@ export function WeeklyPageClient() {
         <>
           <WeeklyBodySection last7={weekData!.bodyLast7} prev7Rows={weekData!.bodyPrev7} />
           <WeeklyFoodSection rows={weekData!.pfcRows} goals={goals} />
+          <WeeklyWorkoutSection summary={weekData!.workoutSummary} />
         </>
       )}
     </div>
