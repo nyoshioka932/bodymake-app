@@ -1,5 +1,16 @@
-import { PlaceholderPage } from "@/components/layout/placeholder-page";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { DataPageClient } from "@/components/data/data-page-client";
 
-export default function DataPage() {
-  return <PlaceholderPage title="データ一覧" />;
+export default async function DataPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  return <DataPageClient />;
 }
